@@ -2,7 +2,6 @@ import { Outlet, createRootRoute, useLocation } from "@tanstack/react-router"
 import React, { Suspense } from "react"
 
 import NotFound from "@/components/Common/NotFound"
-import Sidebar from "@/components/Common/Sidebar/Sidebar"
 import { Container } from "@chakra-ui/react"
 
 const loadDevtools = () =>
@@ -34,7 +33,6 @@ export const Route = createRootRoute({
     return (
       <>
         <Container className="layout-container" display="flex" minH="100vh" p={0} maxW="full" w="100%">
-          {showSidebar && <Sidebar />}
           <Outlet />
         </Container>
         <Suspense>

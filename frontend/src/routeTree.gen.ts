@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as GameRouteImport } from './routes/_game'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutTestRouteImport } from './routes/_layout/test'
+import { Route as GamesDartRouteImport } from './routes/_games/dart'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -28,41 +31,72 @@ const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GameRoute = GameRouteImport.update({
+  id: '/_game',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutTestRoute = LayoutTestRouteImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const GamesDartRoute = GamesDartRouteImport.update({
+  id: '/_games/dart',
+  path: '/dart',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/dart': typeof GamesDartRoute
+  '/test': typeof LayoutTestRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/dart': typeof GamesDartRoute
+  '/test': typeof LayoutTestRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_game': typeof GameRoute
   '/_layout': typeof LayoutRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_games/dart': typeof GamesDartRoute
+  '/_layout/test': typeof LayoutTestRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/signup' | '/'
+  fullPaths: '/login' | '/signup' | '/dart' | '/test' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/signup' | '/'
-  id: '__root__' | '/_layout' | '/login' | '/signup' | '/_layout/'
+  to: '/login' | '/signup' | '/dart' | '/test' | '/'
+  id:
+    | '__root__'
+    | '/_game'
+    | '/_layout'
+    | '/login'
+    | '/signup'
+    | '/_games/dart'
+    | '/_layout/test'
+    | '/_layout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  GameRoute: typeof GameRoute
   LayoutRoute: typeof LayoutRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  GamesDartRoute: typeof GamesDartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_game': {
+      id: '/_game'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof GameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_layout/': {
       id: '/_layout/'
       path: '/'
@@ -95,14 +136,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/test': {
+      id: '/_layout/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof LayoutTestRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_games/dart': {
+      id: '/_games/dart'
+      path: '/dart'
+      fullPath: '/dart'
+      preLoaderRoute: typeof GamesDartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface LayoutRouteChildren {
+  LayoutTestRoute: typeof LayoutTestRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutTestRoute: LayoutTestRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 
@@ -110,9 +167,11 @@ const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  GameRoute: GameRoute,
   LayoutRoute: LayoutRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  GamesDartRoute: GamesDartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

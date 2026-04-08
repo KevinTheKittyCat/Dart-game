@@ -7,7 +7,7 @@
     "prisma",
     "shared"
   ],
-  "scripts": {
-    "postinstall": "cd prisma && npm run generate"
+  "dependencies": {
+    "react-konva": "^19.2.3"
   }
 }

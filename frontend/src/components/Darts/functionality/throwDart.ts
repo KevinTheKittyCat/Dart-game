@@ -19,7 +19,8 @@ interface DartThrow {
     segments: DartBoardSegment[]
 }
 
-
+// This is because the hitPosition is from window.innerWidth & Height
+const fullWindowSize = { x: window.innerWidth, y: window.innerHeight }
 
 export function throwDart({
     board,
@@ -30,7 +31,7 @@ export function throwDart({
 }: DartThrow) {
     const hitPosition = noiseHit({ accuracy, pointOfAim });
     const adjustedPosition = adjustThrow({ adjustments, pointOfAim: hitPosition });
-    const hitSegment = determineHitSegment(adjustedPosition, segments, board.size);
+    const hitSegment = determineHitSegment(adjustedPosition, segments, fullWindowSize);
     if (!hitSegment) return { hitPosition: adjustedPosition, hitSegment: null };
     const hitResult = determineSegmentMultiplier(adjustedPosition, hitSegment, board);
 
@@ -45,8 +46,8 @@ export function throwDart({
 function noiseHit({ accuracy, pointOfAim }: Pick<DartThrow, 'accuracy' | 'pointOfAim'>): Position {
     const noiseX = (Math.random() - 0.5) * (accuracy * 2)
     const noiseY = (Math.random() - 0.5) * (accuracy * 2)
-    const finalX = pointOfAim.x + noiseX;
-    const finalY = pointOfAim.y + noiseY;
+    const finalX = pointOfAim.x //+ noiseX;
+    const finalY = pointOfAim.y //+ noiseY;
     return { x: finalX, y: finalY };
 }
 
@@ -65,12 +66,28 @@ function getHitAngle(boardSize: Position, position: Position): number {
 
 function determineHitSegment(position: Position, segments: DartBoardSegment[], boardSize: Position): DartBoardSegment | null {
     const hitAngle = getHitAngle(boardSize, position);
-    const segmentAngleHit = segments.find(segment => segment.angleStart <= hitAngle && hitAngle < segment.angleEnd);
+    console.log({ hitAngle })
+    const segmentAngleHit = segments.find(segment => {
+        const adjustedHitAngle = hitAngle; // Adjust hit angle based on segment offset
+        if ( segment.angleStart < 0 || segment.angleEnd < 0) {
+            const adjustedAngleStart = (segment.angleStart + 360) % 360;
+            const adjustedAngleEnd = (segment.angleEnd + 360) % 360;
+            if (adjustedAngleStart > adjustedAngleEnd) {
+                return adjustedHitAngle >= adjustedAngleStart || adjustedHitAngle < adjustedAngleEnd;
+            }
+            return adjustedHitAngle >= adjustedAngleStart && adjustedHitAngle < adjustedAngleEnd;
+        }
+        return segment.angleStart <= adjustedHitAngle && adjustedHitAngle < segment.angleEnd;
+    });
+    console.log({ segmentsWithAnglesOver270: segments.reduce((acc, segment) => {
+        if (segment.angleStart > 270 || segment.angleEnd > 270) {
+            acc.push({ value: segment.value, angleStart: segment.angleStart, angleEnd: segment.angleEnd });
+        }        return acc;
+    }, [] as any[]) })
     return segmentAngleHit || null;
 }
 
 function determineSegmentMultiplier(position: Position, segment: DartBoardSegment, board: DartBoard): Wedge | null {
-    console.log(board)
     const centerX = board.center.x;
     const centerY = board.center.y;
     const distanceFromCenter = Math.sqrt((position.x - centerX) ** 2 + (position.y - centerY) ** 2);
@@ -80,11 +97,10 @@ function determineSegmentMultiplier(position: Position, segment: DartBoardSegmen
     const boardWedgePercent = boardPercentDistance + bullseyePercentage + paddingPercentage / 2; // Adjust distance to account for bullseye radius 
 
     let currentWedgePercentage = 0;
-    console.log({ boardWedgePercent, distanceFromCenter })
     for (const wedge of segment.wedges || []) {
         const wedgeInnerRadius = currentWedgePercentage;
         const wedgeOuterRadius = currentWedgePercentage + wedge.size;
-        console.log({ wedge, distanceFromCenter, wedgeInnerRadius, wedgeOuterRadius });
+        //console.log({ wedge, distanceFromCenter, wedgeInnerRadius, wedgeOuterRadius });
         if (boardWedgePercent >= wedgeInnerRadius && boardWedgePercent <= wedgeOuterRadius) {
             return wedge;
         }

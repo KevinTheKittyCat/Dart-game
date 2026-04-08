@@ -36,19 +36,23 @@ const fontSize = 30 * (dartboardRadius / 300);
 const numbers = new Array(20).fill(0)
 const dartBoardNumbers = numbers.map((_, i) => {
     const angleStep = 360 / numbers.length;
-    const rotation = i * angleStep - angleStep / 2 - 90;
+    const offsetToPut20AtTop = angleStep / 2 + 90;
+    const rotation = i * angleStep - offsetToPut20AtTop;
     return new DartBoardSegment({
         index: i,
         value: i + 1,
         rotation,
+        offset: offsetToPut20AtTop,
         isEven: i % 2 === 0,
         angleStep,
     });
 });
+const angleStep = 360 / dartBoardNumbers.length;
 
 export function DartsCanvas() {
     const [dartPos, setDartPos] = useState<{ x: number; y: number } | null>(null);
     const [aimPos, setAimPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [hit, setHit] = useState<any>(null);
     const accuracy = 40 * (dartboardRadius / 300); // Max distance from center for a "perfect" throw
 
     return (
@@ -71,6 +75,7 @@ export function DartsCanvas() {
                     });
                     console.log('Dart hit result:', hitResult);
                     setDartPos(hitResult.hitPosition);
+                    setHit(hitResult);
                 }}>
                 <Layer>
                     <Group x={width / 2} y={height / 2}>
@@ -78,50 +83,46 @@ export function DartsCanvas() {
                             radius={dartboardRadius}
                             fill="#000000"
                         />
-                        {dartBoardNumbers.map(({ value, rotation, isEven }, i) => {
-                            const angleStep = 360 / dartBoardNumbers.length;
-                            //const rotation = i * angleStep - angleStep / 2 - 90;
-                            //const isEven = i % 2 === 0;
-
+                        {dartBoardNumbers.map(({ value, rotation, isEven, wedges }) => {
                             return (
                                 <Group // Wedges
                                     key={`seg-${value}`}
                                     rotation={rotation}
                                 >
-                                    <Arc // Inner-wedge
-                                        innerRadius={firstArcInnerRadius}
-                                        outerRadius={firstArcInnerRadius + arcSize}
-                                        angle={angleStep}
-                                        fill={isEven ? "#222" : "#ececec"}
-                                    />
-                                    <Arc // Multiplier middle
-                                        innerRadius={secondMultiplierInnerRadius}
-                                        outerRadius={secondMultiplierInnerRadius + multiplierSize}
-                                        angle={angleStep}
-                                        fill={isEven ? "#931e1e" : "#25662a"}
-                                    />
-
-                                    <Arc // Outer-wedge
-                                        innerRadius={secondArcInnerRadius}
-                                        outerRadius={secondArcInnerRadius + arcSize}
-                                        angle={angleStep}
-                                        fill={isEven ? "#222" : "#ececec"}
-                                    />
-                                    <Arc // Multiplier edge
-                                        innerRadius={thirdMultiplierInnerRadius}
-                                        outerRadius={thirdMultiplierInnerRadius + multiplierSize}
-                                        angle={angleStep}
-                                        fill={isEven ? "#931e1e" : "#25662a"}
-                                    />
+                                    {wedges?.map((wedge, i) => {
+                                        const beforeWedges = wedges.slice(0, i).reduce(
+                                            (sum, w) => {
+                                                sum += w.size;
+                                                return sum;
+                                            },
+                                            (board.bullseye.radius + multiplierSize) / (board.radius - board.padding) * 100
+                                        );
+                                        const radius = (board.radius - board.padding) / 100;
+                                        const wedgeInnerRadius = radius * beforeWedges;
+                                        const wedgeOuterRadius = wedgeInnerRadius + radius * wedge.size;
+                                        const wedgeColor = wedge.color ?
+                                            wedge.color === "multiplier" ? (wedge.multiplier === 2 ? "#25662a" : "#931e1e") : wedge.color
+                                            : (isEven ? "#222" : "#ececec");
+                                        return (
+                                            <Arc
+                                                key={`wedge-${value}-${i}`}
+                                                innerRadius={wedgeInnerRadius}
+                                                outerRadius={wedgeOuterRadius}
+                                                angle={angleStep}
+                                                fill={wedgeColor}
+                                            />
+                                        )
+                                    })}
                                     <Text
-                                        x={thirdMultiplierInnerRadius + multiplierSize + 100 - fontSize}
-                                        y={fontSize / 2 + 50}
-                                        text={`${value.toString()}`}
+                                        text={value.toString()}
                                         fontSize={fontSize}
-                                        fontFamily="Calibri"
-                                        fill="white"
-                                        rotation={-rotation} // Counter-rotate text
-                                        offsetX={20} // Approximate half width
+                                        fill={"#fff"}
+                                        rotation={-rotation}
+                                        x={board.radius - board.padding + 50}
+                                        y={0}
+                                        align="center"
+                                        verticalAlign="middle"
+                                        offsetX={30}
                                     />
                                 </Group>
                             )
@@ -139,9 +140,6 @@ export function DartsCanvas() {
                         />
 
                     </Group>
-
-
-
                     <Circle // Aim indicator
                         fill="#ffffff2c"
                         stroke={"white"}
@@ -160,6 +158,9 @@ export function DartsCanvas() {
                     )}
                 </Layer>
             </Stage>
+            <h2 style={{ position: 'absolute', top: 20, left: 20, color: '#ffffff' }}>{
+                hit ? `Hit: ${hit.hitSegment?.value} ${hit.hitResult?.multiplier}x` : ''
+            }</h2>
         </div>
     );
 }

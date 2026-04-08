@@ -3,10 +3,10 @@ export type Position = { x: number, y: number }
 
 export class Wedge {
     size: number
-    color: string | "override"
+    color: string | "override" | null
     multiplier: number
 
-    constructor({ size, color, multiplier }: { size: number, color: string | "override", multiplier: number }) {
+    constructor({ size, color, multiplier }: { size: number, color: string | "override" | null, multiplier: number }) {
         this.size = size;
         this.color = color;
         this.multiplier = multiplier;
@@ -21,33 +21,39 @@ export class DartBoardSegment {
     angleStart: number;
     angleEnd: number;
     wedges?: Wedge[];
+    offset: number;
 
     constructor({
-        angleStep, index, value, rotation, isEven, wedges
+        angleStep, index, value, rotation, isEven, wedges, offset
     }: {
         index: number,
         value: number,
         rotation: number,
         isEven: boolean,
         angleStep: number,
-        wedges?: Wedge[]
+        wedges?: Wedge[],
+        offset: number,
     }) {
         this.index = index;
         this.value = value;
         this.rotation = rotation;
         this.isEven = isEven;
-        this.angleStart =  ((rotation + 360) ) % 360,
-        this.angleEnd = ((rotation + angleStep + 360) % 360),
+        this.offset = offset;
+        this.angleStart = rotation;
+        this.angleEnd = rotation + angleStep;
         this.wedges = wedges ?? this.createNewDefaultWedges();
+        console.log({ angleStart: this.angleStart, angleEnd: this.angleEnd, rotation })
     }
 
 
     createNewDefaultWedges(): Wedge[] {
+        const multiplierPercentage = 5
+        const normalPercentage = 45
         return [
-            new Wedge({ size: 46, color: "override", multiplier: 1 }),
-            new Wedge({ size: 2, color: "override", multiplier: 2 }),
-            new Wedge({ size: 46, color: "override", multiplier: 1 }),
-            new Wedge({ size: 2, color: "override", multiplier: 3 }),
+            new Wedge({ size: normalPercentage, color: null, multiplier: 1 }),
+            new Wedge({ size: multiplierPercentage, color: "multiplier", multiplier: 2 }),
+            new Wedge({ size: normalPercentage, color: null, multiplier: 1 }),
+            new Wedge({ size: multiplierPercentage, color: "multiplier", multiplier: 3 }),
         ];
     }
 }

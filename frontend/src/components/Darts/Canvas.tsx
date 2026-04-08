@@ -119,7 +119,7 @@ export function DartsCanvas() {
                                         fill={"#fff"}
                                         rotation={-rotation}
                                         x={board.radius - board.padding + 50}
-                                        y={0}
+                                        y={60 * (dartboardRadius / 300)}
                                         align="center"
                                         verticalAlign="middle"
                                         offsetX={30}

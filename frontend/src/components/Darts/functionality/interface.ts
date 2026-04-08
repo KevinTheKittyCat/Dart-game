@@ -42,7 +42,6 @@ export class DartBoardSegment {
         this.angleStart = rotation;
         this.angleEnd = rotation + angleStep;
         this.wedges = wedges ?? this.createNewDefaultWedges();
-        console.log({ angleStart: this.angleStart, angleEnd: this.angleEnd, rotation })
     }
 
 

@@ -110,6 +110,7 @@ export function DartsCanvas() {
                                                 outerRadius={wedgeOuterRadius}
                                                 angle={angleStep}
                                                 fill={wedgeColor}
+                                                stroke={hit?.hitSegment?.value === value && hit.hitResult?.multiplier === wedge.multiplier ? "yellow" : undefined}
                                             />
                                         )
                                     })}

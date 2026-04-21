@@ -19,6 +19,9 @@
     "@chakra-ui/cli": "^3.21.0",
     "@chakra-ui/react": "^3.21.0",
     "@emotion/react": "^11.14.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@tanstack/react-query": "^5.81.2",
     "@tanstack/react-query-devtools": "^5.81.2",
     "@tanstack/react-router": "1.121.27",
@@ -33,7 +36,8 @@
     "react-hook-form": "7.58.1",
     "react-icons": "^5.5.0",
     "react-konva": "^19.2.3",
-    "react-use-websocket": "^4.13.0"
+    "react-use-websocket": "^4.13.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.4",

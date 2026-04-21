@@ -48,7 +48,7 @@ export function RoundProvider({ children }: { children: React.ReactNode }) {
     }, [darts]);
 
     const addThrownDart = useCallback((dart: ThrownDart) => {
-        console.log(dart)
+        //console.log(dart)
         setRound(current => ({
             ...current,
             darts: current.darts.filter(d => d.id !== dart.parentId),

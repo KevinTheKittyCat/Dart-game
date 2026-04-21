@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 import { Dart, dartboardRadius, Relic } from "./functionality/interface";
 import { RoundState } from "./RoundContext";
 
@@ -15,7 +15,11 @@ const defaultGameState: GameState = {
     totalThrows: 0,
     totalPoints: 0,
 }
-const GameContext = createContext<GameState>(defaultGameState);
+const GameContext = createContext<GameState & ExtraGameContext>({} as GameState & ExtraGameContext);
+
+type ExtraGameContext = {
+    uiRef: React.RefObject<HTMLDivElement>;
+}
 
 export interface GameState {
     round: number;
@@ -35,8 +39,9 @@ export interface GameState {
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
     const [game, setGame] = useState<GameState>(defaultGameState);
+    const uiRef = useRef<HTMLDivElement>(null); // Reference to the UI layer for potential future use, such as measuring dimensions or attaching events
     return (
-        <GameContext.Provider value={game}>
+        <GameContext.Provider value={{...game, uiRef}}>
             {children}
         </GameContext.Provider>
     );

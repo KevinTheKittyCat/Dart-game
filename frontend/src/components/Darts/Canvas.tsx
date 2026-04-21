@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Arc, Circle, Group, Layer, Ring, Stage, Text } from "react-konva";
-import { DartBoardSegment } from "./functionality/interface";
+import { DartBoardSegment, ThrownDart } from "./functionality/interface";
 import { throwDart } from "./functionality/throwDart";
-
+import { useGame } from "./GameContext";
+import { useRound } from "./RoundContext";
 
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 const dartboardPadding = 50;
-const dartboardRadius = Math.min(width, height) / 2 - dartboardPadding;
+export const dartboardRadius = Math.min(width, height) / 2 - dartboardPadding;
 const board = {
     size: { x: dartboardRadius * 2, y: dartboardRadius * 2 },
     radius: dartboardRadius,
@@ -23,7 +24,6 @@ const arcSize = 100 * (dartboardRadius / 300)
 const multiplierSize = 10 * (dartboardRadius / 300);
 
 const firstArcInnerRadius = (multiplierSize + multiplierSize);
-
 
 
 const secondMultiplierInnerRadius = firstArcInnerRadius + arcSize
@@ -50,10 +50,31 @@ const dartBoardNumbers = numbers.map((_, i) => {
 const angleStep = 360 / dartBoardNumbers.length;
 
 export function DartsCanvas() {
+    const { accuracy, } = useGame();
+    const { addThrownDart, currentDart, thrownDarts } = useRound();
     const [dartPos, setDartPos] = useState<{ x: number; y: number } | null>(null);
     const [aimPos, setAimPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [hit, setHit] = useState<any>(null);
-    const accuracy = 40 * (dartboardRadius / 300); // Max distance from center for a "perfect" throw
+
+    const handleDartThrow = () => {
+        if (!currentDart) return;
+        const hitResult = throwDart({
+            board,
+            accuracy,
+            pointOfAim: aimPos,
+            adjustments: [],
+            segments: dartBoardNumbers,
+        });
+        console.log('Dart hit result:', hitResult);
+        //setDartPos(hitResult.hitPosition);
+        //setHit(hitResult);
+        const thrownDart = new ThrownDart({
+            ...currentDart,
+            ...hitResult,
+            pointOfAim: aimPos,
+        });
+        addThrownDart(thrownDart);
+    }
 
     return (
         <div style={{ width: '100%', height: '100%', backgroundColor: '#282828' }}>
@@ -65,18 +86,7 @@ export function DartsCanvas() {
                         setAimPos(pointerPosition);
                     }
                 }}
-                onClick={(e) => {
-                    const hitResult = throwDart({
-                        board,
-                        accuracy,
-                        pointOfAim: aimPos,
-                        adjustments: [],
-                        segments: dartBoardNumbers,
-                    });
-                    console.log('Dart hit result:', hitResult);
-                    setDartPos(hitResult.hitPosition);
-                    setHit(hitResult);
-                }}>
+                onClick={handleDartThrow}>
                 <Layer>
                     <Group x={width / 2} y={height / 2}>
                         <Circle // Board Background
@@ -148,7 +158,16 @@ export function DartsCanvas() {
                         x={aimPos?.x || 0}
                         y={aimPos?.y || 0}
                     />
-                    {dartPos && (
+                    {thrownDarts.map((dart, index) => (
+                        <Circle // Dart hit position
+                            fill="#ff0000"
+                            stroke={"white"}
+                            radius={10}
+                            x={dart.hitPosition.x}
+                            y={dart.hitPosition.y}
+                        />
+                    ))}
+                    {/*dartPos && (
                         <Circle // Dart hit position
                             fill="#ff0000"
                             stroke={"white"}
@@ -156,7 +175,7 @@ export function DartsCanvas() {
                             x={dartPos.x}
                             y={dartPos.y}
                         />
-                    )}
+                    )*/}
                 </Layer>
             </Stage>
             <h2 style={{ position: 'absolute', top: 20, left: 20, color: '#ffffff' }}>{

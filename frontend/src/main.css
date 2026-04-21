@@ -2,6 +2,14 @@ body, html, #root {
     background: #ffffff00 !important;
 }
 
+.only-children-clickable {
+    pointer-events: none;
+
+    * {
+        pointer-events: auto;
+    }
+}
+
 @keyframes expand-in {
     0% {
         transform: scale(0);

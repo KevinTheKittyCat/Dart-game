@@ -1,3 +1,8 @@
+export const width = window.innerWidth;
+export const height = window.innerHeight;
+export const dartboardPadding = 50;
+export const dartboardRadius = Math.min(width, height) / 2 - dartboardPadding;
+
 
 export type Position = { x: number, y: number }
 
@@ -88,3 +93,69 @@ export class DartBoard {
         this.bullseye = bullseye;
     }
 }
+
+export class DartTip {
+    weight: number = 20;
+    multiplier: number = 1;
+    tags: string[] = []; // Example: "sharp", "steel", "soft", "magnetic", etc.
+    id: string = "steel-rod"; // Unique identifier for the tip type to match with json data
+    constructor() { }
+}
+export class DartBarrel {
+    weight: number = 20;
+    constructor() { }
+}
+export class DartShaft {
+    constructor() { }
+}
+export class DartFlight {
+    constructor() { }
+}
+
+export class Dart {
+    id: number = Math.floor(Math.random() * 1000000);
+
+    // Components
+    tip: DartTip = new DartTip();
+    barrel: DartBarrel = new DartBarrel();
+    shaft: DartShaft = new DartShaft();
+    flight: DartFlight = new DartFlight();
+
+    constructor(props?: Dart) {
+        if (!props) return;
+        const { tip, barrel, shaft, flight } = props;
+        this.tip = tip;
+        this.barrel = barrel;
+        this.shaft = shaft;
+        this.flight = flight;
+    }
+}
+
+export class ThrownDart extends Dart {
+    pointsScored: number = 0;
+    hitPosition: Position | null = null;
+    hitSegment: DartBoardSegment | null = null;
+    hitResult: any = null;
+    pointOfAim: Position = { x: 0, y: 0 };
+    parentId: any = null;
+
+    constructor(props: Dart & {
+        hitPosition: Position | null,
+        hitSegment: DartBoardSegment | null,
+        hitResult: any,
+        pointsScored: number,
+        pointOfAim: Position,
+    }) {
+        super(props);
+        this.hitSegment = props.hitSegment;
+        this.hitPosition = props.hitPosition;
+        this.hitResult = props.hitResult;
+        this.pointsScored = props.pointsScored;
+        this.pointOfAim = props.pointOfAim;
+        this.parentId = props.id;
+    }
+}
+
+export class Relic { }
+
+

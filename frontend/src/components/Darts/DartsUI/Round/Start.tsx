@@ -1,6 +1,6 @@
 
 import { Button } from "@chakra-ui/react";
-import { useRound } from "../RoundContext";
+import { useRound } from "../../RoundContext";
 
 
 
@@ -13,7 +13,7 @@ export function DartsStartButton() {
 
     return (
         <Button color="primary" onClick={() => startNewRound()}>
-            Start Game
+            Next Round
         </Button>
     );
 }

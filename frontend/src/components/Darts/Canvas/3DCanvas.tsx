@@ -1,6 +1,6 @@
 import { Cylinder, PresentationControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import { dartboardPadding, DartBoardSegment, ThrownDart } from "../functionality/interface";
 import { throwDart } from "../functionality/throwDart";
@@ -38,12 +38,11 @@ export function toDegrees(radians: number) {
 }
 
 export function DartsCanvas3D() {
-  const { accuracy, uiRef } = useGame();
+  const { accuracy} = useGame();
   const { addThrownDart, currentDart, thrownDarts } = useRound();
-  const [aimPos, setAimPos] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const boardRef = useRef<THREE.Group>(null);
-  const aimRef = useRef<THREE.Mesh>(null); 
-  const offsetToCenterScreenRightSide = new THREE.Vector3(500, 0, 0);
+  const aimRef = useRef<THREE.Mesh>(null);
+  const offsetToCenterScreenRightSide = new THREE.Vector3(0, 0, 0); //new THREE.Vector3(500, 0, 0);
 
   const handleBoardClick = (e: any) => {
     e.stopPropagation();
@@ -80,7 +79,7 @@ export function DartsCanvas3D() {
 
   return (
     <div style={{ width: "100%", height: "100vh", backgroundColor: "#121212" }}>
-      <Canvas camera={{ position: [0, 0, 2500], fov: 55, near: 0.1, far: 8000 }}>
+      <Canvas camera={{ position: [0, 0, 300/*800*/], fov: 55, near: 0.1, far: 8000 }}>
         {/* Simplified, robust lighting to prevent errors */}
         <ambientLight intensity={0.6} />
 
@@ -141,7 +140,7 @@ export function DartsCanvas3D() {
             </Cylinder>
 
             <Cylinder
-              args={[x, y, boardThickness - 2, 64]}
+              args={[x, y, boardThickness /2, 64]}
               rotation={[Math.PI / 2, 0, 0]}
               position={[0, 0, -boardThickness / 2]} // Push it back so the face is at Z=0
             >
@@ -161,8 +160,12 @@ export function DartsCanvas3D() {
             {/* Aim Indicator */}
             <mesh ref={aimRef} /*position={[aimPos.x, aimPos.y, 2]}*/>
               <ringGeometry args={[accuracy, accuracy + 10, 32]} />
-              <meshBasicMaterial color="white" transparent opacity={0.3} side={THREE.DoubleSide} />
+              {/*<meshBasicMaterial color="white" transparent opacity={0.3} side={THREE.DoubleSide} />*/}
+
+              {/* NOISE MATERIAL */}
+              <meshStandardMaterial color="#ffffff" transparent opacity={0.3} side={THREE.DoubleSide} roughness={0.5} metalness={0.5} />
             </mesh>
+
 
             {/* Render the Hit Red Balls */}
             {thrownDarts.map((dart, i) => (

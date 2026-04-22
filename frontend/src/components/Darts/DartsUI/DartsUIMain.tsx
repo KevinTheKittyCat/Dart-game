@@ -13,9 +13,11 @@ export function DartsUIMain() {
     return (
         <Flex ref={uiRef}
             pointerEvents={"none"}
-            zIndex={UI_INDEX} w="100%" h="100%"
+            zIndex={UI_INDEX}
+            //w="100%"
+            h="100vh"
             direction="column"
-            position="absolute" top={0} left={0}
+        //position="absolute" top={0} left={0}
         >
             <Flex w="100%" h="100%" pos={"relative"} direction="column" className="only-children-clickable">
                 <RoundOverview />

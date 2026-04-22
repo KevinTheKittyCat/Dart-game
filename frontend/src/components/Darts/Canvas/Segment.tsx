@@ -142,7 +142,7 @@ function NoiseMesh({ geometry, blendingMode, children, position, blendOpacity, c
         // This is the big one for brightness:
         tex.colorSpace = THREE.SRGBColorSpace;
         //tex.repeat.set(0.4, 0.4);
-        tex.repeat.set(0.005, 0.005);
+        tex.repeat.set(0.025, 0.025);
         return tex;
     }, []);
     const noiseValues = useMemo(() => ({
@@ -150,13 +150,14 @@ function NoiseMesh({ geometry, blendingMode, children, position, blendOpacity, c
         metalness: 0,
         map: noiseTexture,
         aoMap: noiseTexture,
-        aoMapIntensity: 0.1,
+        aoMapIntensity: 10.1,
         bumpMap: noiseTexture,
         bumpScale: 0.8,
         displacementMap: noiseTexture,
-        displacementScale: 0.8,
+        displacementScale: 3.8,
         envMapIntensity: 1
     }), [noiseTexture]);
+
     const bumpTexture = useMemo(() => {
         if (!bumpy) return null;
         const tex = generateNoiseTexture(256);

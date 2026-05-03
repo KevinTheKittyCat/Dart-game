@@ -23,31 +23,21 @@ export function createWedgeShape(innerRadius: number, outerRadius: number, angle
 
 
 export function DartSegment({ index, segment }: { index: number, segment: DartBoardSegment }) {
-    const value = segment.value;;
-    const isEvenIndex = index % 2 === 0; // To alternate colors
+    const value = segment.value;
+    const isEvenIndex = index % 2 === 0;
 
-    const arcSize = 100 * (dartboardRadius / 300)
+    const arcSize = 100 * (dartboardRadius / 300);
     const multiplierSize = 10 * (dartboardRadius / 300);
-
-    //const arcSize = 45;
-
     const angleStepRad = (Math.PI * 2) / 20;
-
-    // Mathematically offset so the first segment (20) sits exactly at the top center
-    //const offsetToTop = Math.PI / 2 - angleStepRad / 2; 
-    const offsetToTop = toRadians(segment.offset);
     const rotation = toRadians(-segment.rotation);
 
     // Radii logic
     const firstArcInner = multiplierSize + multiplierSize;
     const firstArcOuter = firstArcInner + arcSize;
-
     const trebleInner = firstArcOuter;
     const trebleOuter = trebleInner + multiplierSize;
-
     const secondArcInner = trebleOuter;
     const secondArcOuter = secondArcInner + arcSize;
-
     const doubleInner = secondArcOuter;
     const doubleOuter = doubleInner + multiplierSize;
 
@@ -60,62 +50,131 @@ export function DartSegment({ index, segment }: { index: number, segment: DartBo
     const wedgeColor = isEvenIndex ? darkWedge : lightWedge;
     const multiColor = isEvenIndex ? redMultiplier : greenMultiplier;
 
-    // Pre-calculate geometry shapes once to save memory
-    const geometries = useMemo(() => {
-        const extrudeSettings = { depth: 2, bevelEnabled: false }; // 2 units thick
+    const wireRadius = 0.8; // Thickness of the metal bars
+    const wireColor = "#d1d1d1";
+    const wireMaterial = new THREE.MeshStandardMaterial({
+        color: wireColor,
+        metalness: 0.9,
+        roughness: 0.2
+    });
+    const wireGeometries = useMemo(() => {
+        // 1. Radial Bar (The vertical bars separating numbers)
+        // Length is from the very center (or firstArcInner) to the outer edge
+        const radialLength = doubleOuter - firstArcInner;
+        const radialBar = new THREE.CylinderGeometry(wireRadius, wireRadius, radialLength, 8);
+
+        // 2. Circular Rings (The horizontal arcs)
+        // We create arcs that match the angleStepRad
+        const createRingArc = (radius: number) =>
+            new THREE.TorusGeometry(radius, wireRadius, 8, 32, angleStepRad);
+
         return {
-            innerWedge: new THREE.ExtrudeGeometry(createWedgeShape(firstArcInner, firstArcOuter, angleStepRad), extrudeSettings),
-            trebleRing: new THREE.ExtrudeGeometry(createWedgeShape(trebleInner, trebleOuter, angleStepRad), extrudeSettings),
-            outerWedge: new THREE.ExtrudeGeometry(createWedgeShape(secondArcInner, secondArcOuter, angleStepRad), extrudeSettings),
-            doubleRing: new THREE.ExtrudeGeometry(createWedgeShape(doubleInner, doubleOuter, angleStepRad), extrudeSettings),
+            radialBar,
+            ringFirstInner: createRingArc(firstArcInner),
+            ringTrebleInner: createRingArc(trebleInner),
+            ringTrebleOuter: createRingArc(trebleOuter),
+            ringDoubleInner: createRingArc(doubleInner),
+            ringDoubleOuter: createRingArc(doubleOuter),
         };
-    }, []);
+    }, [angleStepRad, doubleOuter, firstArcInner]);
+
+    const geometries = useMemo(() => {
+        const extrudeSettings = { depth: 2, bevelEnabled: false };
+        // Slightly taller extrude for the wires to sit "on top"
+        const wireExtrudeSettings = { depth: 3, bevelEnabled: false };
+
+        const innerWedgeShape = createWedgeShape(firstArcInner, firstArcOuter, angleStepRad);
+        const trebleShape = createWedgeShape(trebleInner, trebleOuter, angleStepRad);
+        const outerWedgeShape = createWedgeShape(secondArcInner, secondArcOuter, angleStepRad);
+        const doubleShape = createWedgeShape(doubleInner, doubleOuter, angleStepRad);
+
+        return {
+            innerWedge: new THREE.ExtrudeGeometry(innerWedgeShape, extrudeSettings),
+            trebleRing: new THREE.ExtrudeGeometry(trebleShape, extrudeSettings),
+            outerWedge: new THREE.ExtrudeGeometry(outerWedgeShape, extrudeSettings),
+            doubleRing: new THREE.ExtrudeGeometry(doubleShape, extrudeSettings),
+
+            // Railings/Wires: Using EdgesGeometry for a clean wire look
+            // We only need to outline the full segment length to avoid overlapping internal wires
+            wireFrame: new THREE.EdgesGeometry(
+                new THREE.ExtrudeGeometry(
+                    createWedgeShape(firstArcInner, doubleOuter, angleStepRad),
+                    wireExtrudeSettings
+                )
+            )
+        };
+    }, [arcSize, multiplierSize]);
 
     return (
         <group rotation={[0, 0, rotation]}>
-            {/* Inner Single */}
-            <NoiseMesh
-                geometry={geometries.innerWedge}
-                position={[0, 0, 0]}
-                blendingMode={wedgeColor !== "#222222" ? THREE.MultiplyBlending : THREE.AdditiveBlending}
-                color={wedgeColor}
-            />
+            {/* --- Metal Railings (The Spider) --- */}
+            <group position={[0, 0, 2.5]}> {/* Lifted slightly above the wedges */}
 
-            {/* Treble */}
+                {/* Left Radial Bar */}
+                <mesh
+                    geometry={wireGeometries.radialBar}
+                    material={wireMaterial}
+                    rotation={[0, 0, angleStepRad / 2]} // Align to edge of segment
+                    position={[(firstArcInner + doubleOuter) / 2, 0, 0]}
+                    rotation-z={Math.PI / 2} // Lay flat
+                />
+
+                {/* Horizontal Arcs (Rings) */}
+                {[
+                    wireGeometries.ringFirstInner,
+                    wireGeometries.ringTrebleInner,
+                    wireGeometries.ringTrebleOuter,
+                    wireGeometries.ringDoubleInner,
+                    wireGeometries.ringDoubleOuter
+                ].map((geo, i) => (
+                    <mesh
+                        key={i}
+                        geometry={geo}
+                        material={wireMaterial}
+                        rotation={[0, 0, -angleStepRad / 2]} // Offset to match wedge start
+                    />
+                ))}
+            </group>
+
+            {/* Sisal Wedges */}
+            <NoiseMesh geometry={geometries.innerWedge} color={wedgeColor} />
+
             <NoiseMesh
                 geometry={geometries.trebleRing}
                 position={[0, 0, 0.5]}
-                blendingMode={THREE.MultiplyBlending}
-                blendOpacity={0.9}
                 color={multiColor}
                 bumpy
             />
 
-            {/* Outer Single */}
-            <NoiseMesh
-                geometry={geometries.outerWedge}
-                position={[0, 0, 0]}
-                blendingMode={wedgeColor !== "#222222" ? THREE.MultiplyBlending : THREE.AdditiveBlending}
-                color={wedgeColor}
-            />
+            <NoiseMesh geometry={geometries.outerWedge} color={wedgeColor} />
 
-            {/* Double */}
             <NoiseMesh
                 geometry={geometries.doubleRing}
                 position={[0, 0, 0.5]}
-                blendingMode={THREE.MultiplyBlending}
                 color={multiColor}
                 bumpy
             />
+
+            {/* Railing / Wire Spider */}
+            <lineSegments geometry={geometries.wireFrame} position={[0, 0, 0.1]}>
+                <lineBasicMaterial color={wireColor} linewidth={2} />
+            </lineSegments>
+
+            {/* Individual Multiplier Railings (Horizontal Wires) */}
+            {/* These create the rings for Treble and Double boundaries */}
+            <lineSegments geometry={new THREE.EdgesGeometry(geometries.trebleRing)} position={[0, 0, 0.6]}>
+                <lineBasicMaterial color={wireColor} />
+            </lineSegments>
+            <lineSegments geometry={new THREE.EdgesGeometry(geometries.doubleRing)} position={[0, 0, 0.6]}>
+                <lineBasicMaterial color={wireColor} />
+            </lineSegments>
 
             {/* Number Text */}
             <Text
                 position={[doubleOuter + 15, 0, 1]}
-                rotation={[0, 0, -rotation - angleStepRad / 2]} // Counter-rotate text so it stays upright relative to center
+                rotation={[0, 0, -rotation - angleStepRad / 2]}
                 fontSize={16}
                 color="white"
-                anchorX="center"
-                anchorY="middle"
             >
                 {value.toString()}
             </Text>

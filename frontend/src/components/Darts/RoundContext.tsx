@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { Dart, ThrownDart } from "./functionality/interface";
+import { RelicEventListener } from "./functionality/onRelic";
 import { useGame } from "./GameContext";
 
 export interface RoundState {
@@ -59,7 +60,8 @@ export function RoundProvider({ children }: { children: React.ReactNode }) {
     }, [round]);
 
     return (
-        <RoundContext.Provider value={{ ...round, startNewRound, addThrownDart, currentDart }}>
+        <RoundContext.Provider value={{ ...round, startNewRound, addThrownDart, currentDart, setRound }}>
+            <RelicEventListener />
             {children}
         </RoundContext.Provider>
     );

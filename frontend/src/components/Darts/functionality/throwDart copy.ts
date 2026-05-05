@@ -31,7 +31,7 @@ export function throwDart({
 }: DartThrow) {
     const hitPosition = noiseHit({ accuracy, pointOfAim });
     const adjustedPosition = adjustThrow({ adjustments, pointOfAim: hitPosition });
-    const hitSegment = determineHitSegment(adjustedPosition, segments, board.size);
+    const hitSegment = determineHitSegment(adjustedPosition, segments, fullWindowSize);
     if (!hitSegment) return { hitPosition: adjustedPosition, hitSegment: null };
     const hitResult = determineSegmentMultiplier(adjustedPosition, hitSegment, board);
 
@@ -60,19 +60,15 @@ function adjustThrow({ adjustments, pointOfAim }: Pick<DartThrow, 'adjustments' 
 function getHitAngle(boardSize: Position, position: Position): number {
     const centerX = boardSize.x / 2;
     const centerY = boardSize.y / 2;
-    const angle = Math.atan2(position.y - centerY, position.x - centerX);
-    const flippedAngle = -angle; // Flip the angle to match the clockwise rotation of the dartboard in 3d.
-    const degrees = (flippedAngle * (180 / Math.PI) + 360) % 360;
-    return degrees;
+    return (360 + Math.atan2(position.y - centerY, position.x - centerX) * (180 / Math.PI)) % 360;
 }
 
 
 function determineHitSegment(position: Position, segments: DartBoardSegment[], boardSize: Position): DartBoardSegment | null {
-    const hitAngle = getHitAngle(boardSize, position); // Subtract 90 degrees to align with 20 at the top
+    const hitAngle = getHitAngle(boardSize, position);
     const segmentAngleHit = segments.find(segment => {
         const adjustedHitAngle = hitAngle; // Adjust hit angle based on segment offset
-        console.log("hitAngle:", adjustedHitAngle);
-        if (segment.angleStart < 0 || segment.angleEnd < 0) {
+        if ( segment.angleStart < 0 || segment.angleEnd < 0) {
             const adjustedAngleStart = (segment.angleStart + 360) % 360;
             const adjustedAngleEnd = (segment.angleEnd + 360) % 360;
             if (adjustedAngleStart > adjustedAngleEnd) {
@@ -89,16 +85,16 @@ function determineSegmentMultiplier(position: Position, segment: DartBoardSegmen
     const centerX = board.center.x;
     const centerY = board.center.y;
     const distanceFromCenter = Math.sqrt((position.x - centerX) ** 2 + (position.y - centerY) ** 2);
-
+    
     // Wedge drawing starts after the outer bullseye ring, which is 2x the inner bullseye radius
     const startingRadius = board.bullseye.radius * 2;
     const playableRadius = board.radius - board.padding;
-
+    
     let currentRadius = startingRadius;
     for (const wedge of segment.wedges || []) {
         const wedgeInnerRadius = currentRadius;
         const wedgeOuterRadius = currentRadius + playableRadius * (wedge.size / 100);
-
+        
         if (distanceFromCenter >= wedgeInnerRadius && distanceFromCenter <= wedgeOuterRadius) {
             return wedge;
         }

@@ -1,8 +1,8 @@
-import { Cylinder, PresentationControls } from "@react-three/drei";
+import { Cylinder, PresentationControls, Text } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
-import { dartboardPadding, DartBoardSegment, ThrownDart } from "../functionality/interface";
+import { dartboardPadding, ThrownDart } from "../functionality/interface";
 import { throwDart } from "../functionality/throwDart";
 import { useGame } from "../GameContext";
 import { useRound } from "../RoundContext";
@@ -12,7 +12,7 @@ import { DartSegment } from "./Segment";
 
 const boardRadius = 150;
 const boardThickness = 15;
-
+/*
 const numbers = new Array(20).fill(0)
 const dartBoardNumbers = numbers.map((_, i) => {
   const angleStep = 360 / numbers.length;
@@ -26,8 +26,8 @@ const dartBoardNumbers = numbers.map((_, i) => {
     isEven: i % 2 === 0,
     angleStep,
   });
-});
-const angleStep = 360 / dartBoardNumbers.length;
+});*/
+//const angleStep = 360 / dartBoardNumbers.length;
 
 export function toRadians(degrees: number) {
   return degrees * (Math.PI / 180);
@@ -38,7 +38,7 @@ export function toDegrees(radians: number) {
 }
 
 export function DartsCanvas3D() {
-  const { accuracy} = useGame();
+  const { accuracy, dartBoard } = useGame();
   const { addThrownDart, currentDart, thrownDarts } = useRound();
   const boardRef = useRef<THREE.Group>(null);
   const aimRef = useRef<THREE.Mesh>(null);
@@ -46,31 +46,34 @@ export function DartsCanvas3D() {
 
   const handleBoardClick = (e: any) => {
     e.stopPropagation();
+    if (!currentDart) return;
     const box = new THREE.Box3().setFromObject(boardRef.current);
     const size = box.getSize(new THREE.Vector3());
+    const sizeAdjust = size.clone().sub(new THREE.Vector3(dartboardPadding, dartboardPadding, 0));
+    const offsetHalfSize = sizeAdjust.clone().multiplyScalar(0.5);
 
     const board = {
-      size: size,
+      size: sizeAdjust,
       radius: size.x / 2,
-      center: { x: size.x / 2, y: size.y / 2 },
+      center: offsetHalfSize,
       padding: dartboardPadding,
       bullseye: {
-        radius: 10 * (size.x / 300),
+        radius: 10 * (sizeAdjust.x / 300),
       },
     }
 
     const hitResult = throwDart({
       board,
       accuracy: accuracy,
-      pointOfAim: aimRef.current.position,
+      pointOfAim: aimRef.current.position.clone().add(offsetHalfSize), // Convert to local coordinates relative to the board center
       adjustments: [],
-      segments: dartBoardNumbers,
+      segments: dartBoard,
     });
 
     addThrownDart(new ThrownDart({
       ...currentDart,
       ...hitResult,
-      pointOfAim: aimRef.current.position,
+      pointOfAim: aimRef.current.position.clone(),
       pointsScored: hitResult.hitSegment ? hitResult.hitSegment.value * (hitResult.hitResult?.multiplier || 1) : 0,
     }));
   };
@@ -79,7 +82,7 @@ export function DartsCanvas3D() {
 
   return (
     <div style={{ width: "100%", height: "100vh", backgroundColor: "#121212" }}>
-      <Canvas camera={{ position: [0, 0, 300/*800*/], fov: 55, near: 0.1, far: 8000 }}>
+      <Canvas camera={{ position: [0, 0, 800/*800*/], fov: 55, near: 0.1, far: 8000 }}>
         {/* Simplified, robust lighting to prevent errors */}
         <ambientLight intensity={0.6} />
 
@@ -117,14 +120,14 @@ export function DartsCanvas3D() {
         >
           <group
             ref={boardRef}
-            position={[offsetToCenterScreenRightSide.x, offsetToCenterScreenRightSide.y, offsetToCenterScreenRightSide.z]}
+            //position={[offsetToCenterScreenRightSide.x, offsetToCenterScreenRightSide.y, offsetToCenterScreenRightSide.z]}
           //onPointerMove={(e) => setAimPos(e.point)}
           //onClick={handleBoardClick}
           >
             {/* Thick Base Board */}
             <Cylinder
               args={[x, y, boardThickness + 15, 64]}
-              rotation={[Math.PI / 2, 0, 0]}
+              rotation={[-Math.PI / 2, Math.PI, 0]}
               position={[0, 0, -boardThickness / 2]} // Push it back so the face is at Z=0
 
               //onPointerMove={(e) => setAimPos(e.point)}
@@ -140,15 +143,15 @@ export function DartsCanvas3D() {
             </Cylinder>
 
             <Cylinder
-              args={[x, y, boardThickness /2, 64]}
-              rotation={[Math.PI / 2, 0, 0]}
+              args={[x, y, boardThickness / 2, 64]}
+              rotation={[-Math.PI / 2, 0, 0]}
               position={[0, 0, -boardThickness / 2]} // Push it back so the face is at Z=0
             >
               <meshStandardMaterial color="#0b0b0b" roughness={0.8} />
             </Cylinder>
 
             {/* Wedges */}
-            {dartBoardNumbers.map((segment, i) => (
+            {dartBoard.map((segment, i) => (
               <DartSegment key={i} index={i} segment={segment} />
             ))}
 
@@ -169,9 +172,18 @@ export function DartsCanvas3D() {
 
             {/* Render the Hit Red Balls */}
             {thrownDarts.map((dart, i) => (
-              <mesh key={i} position={[dart.hitPosition.x, dart.hitPosition.y, 5]}>
+              <mesh key={i} position={[dart.pointOfAim.x, dart.pointOfAim.y, 5]}>
                 <sphereGeometry args={[4, 32, 32]} />
                 <meshStandardMaterial color="#ff0000" roughness={0.2} metalness={0.5} />
+                <Text
+                  position={[0, 5, 5]}
+                  fontSize={34}
+                  color="white"
+                  anchorX="center"
+                  anchorY="middle"
+                >
+                  {dart.pointsScored > 0 ? `+${dart.pointsScored}` : "Miss"}
+                </Text>
               </mesh>
             ))}
           </group>

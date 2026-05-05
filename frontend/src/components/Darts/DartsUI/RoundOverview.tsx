@@ -3,6 +3,7 @@ import { CurrentDart } from "./Round/CurrentDart";
 import { DartLineup } from "./Round/DartLineup";
 import DartsMoney from "./Round/Money";
 import { DartsScore } from "./Round/Score";
+import { ShotsLeft } from "./Round/ShotsLeft";
 import { DartsStartButton } from "./Round/Start";
 
 
@@ -20,6 +21,7 @@ export function RoundOverview(props: React.ComponentProps<typeof Flex>) {
             {...props}>
             <Flex gap={4} direction={"column"}>
                 <CurrentDart />
+                <ShotsLeft />
                 <DartLineup />
             </Flex>
             <Flex gap={4} direction={"column"}>

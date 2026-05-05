@@ -1,6 +1,25 @@
-import { createContext, useContext, useRef, useState } from "react";
-import { Dart, dartboardRadius, Relic } from "./functionality/interface";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { gameEvents } from "../Common/Events";
+import { Dart, DartBoardSegment, Relic } from "./functionality/interface";
 import { RoundState } from "./RoundContext";
+
+
+export function generateDartBoardSegments(amount: number) {
+    const numbers = new Array(amount).fill(0);
+    return numbers.map((_, i) => {
+        const angleStep = 360 / numbers.length;
+        const offsetToPut20AtTop = angleStep / 2 + 90;
+        const rotation = i * angleStep - offsetToPut20AtTop;
+        return new DartBoardSegment({
+            index: i,
+            value: i + 1,
+            rotation,
+            offset: offsetToPut20AtTop,
+            isEven: i % 2 === 0,
+            angleStep,
+        });
+    });
+}
 
 const defaultGameState: GameState = {
     round: 0,
@@ -8,17 +27,20 @@ const defaultGameState: GameState = {
     previousRounds: [],
     relics: [],
     currency: 0,
-    accuracy: 250 * (dartboardRadius / 300),
+    accuracy: 1,//250 * (dartboardRadius / 300),
 
     throws: 3,
 
     totalThrows: 0,
     totalPoints: 0,
+
+    dartBoard: generateDartBoardSegments(20),
 }
 const GameContext = createContext<GameState & ExtraGameContext>({} as GameState & ExtraGameContext);
 
 type ExtraGameContext = {
     uiRef: React.RefObject<HTMLDivElement>;
+    addRelic: (relic: Relic) => void;
 }
 
 export interface GameState {
@@ -35,13 +57,33 @@ export interface GameState {
 
     totalThrows: number; // Total throws made in the game, can be used for stats or achievements
     totalPoints: number; // Total points scored across all rounds
+
+    dartBoard: DartBoardSegment[]; // Pre-calculated segments of the dartboard for hit detection
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
     const [game, setGame] = useState<GameState>(defaultGameState);
     const uiRef = useRef<HTMLDivElement>(null); // Reference to the UI layer for potential future use, such as measuring dimensions or attaching events
+    
+    
+    const addRelic = (relic: Relic) => {
+        console.log("Adding relic:", relic.name);
+        setGame(prev => ({
+            ...prev,
+            relics: [...prev.relics, relic],
+        }));
+    }
+
+    useEffect(() => {
+        gameEvents.on("addRelic", addRelic);
+
+        return () => {
+            gameEvents.off("addRelic", addRelic);
+        }
+    }, []);
+    
     return (
-        <GameContext.Provider value={{...game, uiRef}}>
+        <GameContext.Provider value={{ ...game, uiRef, addRelic, setGame }}>
             {children}
         </GameContext.Provider>
     );

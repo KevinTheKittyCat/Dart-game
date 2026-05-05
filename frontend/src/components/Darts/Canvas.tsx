@@ -64,7 +64,7 @@ export function DartsCanvas() {
             adjustments: [],
             segments: dartBoardNumbers,
         });
-        console.log('Dart hit result:', hitResult);
+        console.log(board, aimPos);
         //setDartPos(hitResult.hitPosition);
         //setHit(hitResult);
         const thrownDart = new ThrownDart({
